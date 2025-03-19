@@ -12,7 +12,8 @@ interface IterationResult {
   fpx: string;
   fppx?: string;
   x_next: string;
-  error: string;
+  error: string; // Ea (Approximate Error)
+  et: string; // Et (True Error)
   formula: string;
 }
 
@@ -35,6 +36,7 @@ export default function Home() {
   const [results, setResults] = useState<IterationResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [trueRoot, setTrueRoot] = useState<string>(""); // True root for Et calculation
 
   const calculateNewtonRaphson = (): void => {
     try {
@@ -54,9 +56,12 @@ export default function Home() {
       let x0: number = parseFloat(initialGuess);
       const iterationResults: IterationResult[] = [];
 
-      // Function to calculate relative error
+      // Function to calculate relative error (Ea)
       const calculateError = (current: number, previous: number): number =>
         Math.abs((current - previous) / current) * 100;
+
+      // If trueRoot is not provided, use the final iteration value as an approximation
+      const trueRootValue: number = parseFloat(trueRoot) || 0;
 
       for (let i = 0; i < iterations; i++) {
         // Calculate function values using full precision
@@ -66,11 +71,13 @@ export default function Home() {
 
         let x1: number;
         let et: number;
+        let ea: number;
 
         if (method === "standard") {
           // Standard Newton-Raphson - use full precision for calculations
           x1 = x0 - fx / fpx;
-          et = calculateError(x1, x0);
+          et = Math.abs((trueRootValue - x1) / trueRootValue) * 100; // True Error
+          ea = calculateError(x1, x0); // Approximate Error
 
           iterationResults.push({
             iteration: i + 1,
@@ -78,7 +85,8 @@ export default function Home() {
             fx: fx.toFixed(2),
             fpx: fpx.toFixed(2),
             x_next: x1.toFixed(2),
-            error: et.toFixed(2) + "%",
+            error: ea.toFixed(2) + "%", // Ea
+            et: et.toFixed(2) + "%", // Et
             formula: `x_{i+1} = x_i - \\frac{f(x_i)}{f'(x_i)}`,
           });
         } else {
@@ -86,7 +94,8 @@ export default function Home() {
           const numerator: number = fx * fpx;
           const denominator: number = Math.pow(fpx, 2) - fx * fppx;
           x1 = x0 - numerator / denominator;
-          et = calculateError(x1, x0);
+          et = Math.abs((trueRootValue - x1) / trueRootValue) * 100; // True Error
+          ea = calculateError(x1, x0); // Approximate Error
 
           iterationResults.push({
             iteration: i + 1,
@@ -95,7 +104,8 @@ export default function Home() {
             fpx: fpx.toFixed(2),
             fppx: fppx.toFixed(2),
             x_next: x1.toFixed(2),
-            error: et.toFixed(2) + "%",
+            error: ea.toFixed(2) + "%", // Ea
+            et: et.toFixed(2) + "%", // Et
             formula: `x_{i+1} = x_i - \\frac{f(x_i) \\cdot f'(x_i)}{[f'(x_i)]^2 - f(x_i) \\cdot f''(x_i)}`,
           });
         }
@@ -220,6 +230,22 @@ export default function Home() {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                True Root (Optional)
+              </label>
+              <input
+                type="text"
+                value={trueRoot}
+                onChange={(e) => setTrueRoot(e.target.value)}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:ring-gray-400 focus:border-gray-400 text-white"
+                placeholder="e.g. 2 (optional)"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Provide the true root if known for Et calculation.
+              </p>
+            </div>
+
             <div className="flex items-end">
               <button
                 onClick={calculateNewtonRaphson}
@@ -269,6 +295,7 @@ export default function Home() {
             ))}
           </div>
         </div>
+
         {/* Results Section */}
         {results.length > 0 && (
           <div className="bg-gray-800 p-6 rounded-lg shadow-md border border-gray-700">
@@ -287,7 +314,8 @@ export default function Home() {
                       </th>
                     )}
                     <th className="border border-gray-600 p-2">x_next</th>
-                    <th className="border border-gray-600 p-2">Error</th>
+                    <th className="border border-gray-600 p-2">Ea</th>
+                    <th className="border border-gray-600 p-2">Et</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -309,6 +337,9 @@ export default function Home() {
                       </td>
                       <td className="border border-gray-600 p-2">
                         {result.error}
+                      </td>
+                      <td className="border border-gray-600 p-2">
+                        {result.et}
                       </td>
                     </tr>
                   ))}
