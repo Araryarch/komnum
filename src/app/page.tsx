@@ -59,17 +59,17 @@ export default function Home() {
         Math.abs((current - previous) / current) * 100;
 
       for (let i = 0; i < iterations; i++) {
-        const fx: number = parseFloat(f(x0).toFixed(2));
-        const fpx: number = parseFloat(fPrime(x0).toFixed(2));
-        const fppx: number = parseFloat(fDoublePrime(x0).toFixed(2));
+        // Calculate function values using full precision
+        const fx: number = f(x0);
+        const fpx: number = fPrime(x0);
+        const fppx: number = fDoublePrime(x0);
 
         let x1: number;
         let et: number;
 
         if (method === "standard") {
-          // Standard Newton-Raphson (use exact values for calculation, rounded for display)
-          x1 = x0 - f(x0) / fPrime(x0);
-          x1 = parseFloat(x1.toFixed(2)); // Round to 2 decimal places
+          // Standard Newton-Raphson - use full precision for calculations
+          x1 = x0 - fx / fpx;
           et = calculateError(x1, x0);
 
           iterationResults.push({
@@ -82,12 +82,10 @@ export default function Home() {
             formula: `x_{i+1} = x_i - \\frac{f(x_i)}{f'(x_i)}`,
           });
         } else {
-          // Modified Newton-Raphson (use exact values for calculation, rounded for display)
-          const numerator: number = f(x0) * fPrime(x0);
-          const denominator: number =
-            Math.pow(fPrime(x0), 2) - f(x0) * fDoublePrime(x0);
+          // Modified Newton-Raphson - use full precision for calculations
+          const numerator: number = fx * fpx;
+          const denominator: number = Math.pow(fpx, 2) - fx * fppx;
           x1 = x0 - numerator / denominator;
-          x1 = parseFloat(x1.toFixed(2)); // Round to 2 decimal places
           et = calculateError(x1, x0);
 
           iterationResults.push({
@@ -102,7 +100,7 @@ export default function Home() {
           });
         }
 
-        // Update for next iteration
+        // Update for next iteration - use full precision for next calculation
         x0 = x1;
       }
 
@@ -236,7 +234,7 @@ export default function Home() {
           <div className="mt-4 p-3 bg-gray-700 text-gray-300 rounded border border-gray-600">
             <p className="font-medium">Note:</p>
             <p className="text-sm">
-              All calculations are rounded to 2 decimal places for each step.
+              All calculations are performed with full precision for accuracy, but displayed values are rounded to 2 decimal places.
             </p>
           </div>
 
